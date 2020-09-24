@@ -1,22 +1,38 @@
+using System;
+using System.Threading.Tasks;
 using Amazon.Lambda.Core;
 using Amazon.Runtime;
+using Newtonsoft.Json.Linq;
+using PasswordHashing;
 
-// Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
-[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.Json.JsonSerializer))]
 
 namespace HomeworkLambda
 {
     public class Function
     {
-        public string FunctionHandler(string folderPath, ILambdaContext context)
+        public async Task<string> FunctionHandler(JObject input, ILambdaContext context)
         {
-            var awsCredentials = new StoredProfileAWSCredentials("homework_terraform");
-            const string PREFIX = "nested folder";
-            const string BUCKET_NAME = "homework-s3";
-            const string DYNAMO_TABLE_NAME = "homework-dynamodb";
+            try
+            {
+                var path = input["path"];
+                if (path == null)
+                {
+                    return "Path must be specified";
+                }
 
-            await new PasswordHashingService(awsCredentials, BUCKET_NAME, DYNAMO_TABLE_NAME)
-                .Execute(PREFIX);
+                var bucketName = Environment.GetEnvironmentVariable("S3BucketName");
+                var dynamoTableName = Environment.GetEnvironmentVariable("DynamoTableName");
+
+                var hashingService = new PasswordHashingService(FallbackCredentialsFactory.GetCredentials(), bucketName, dynamoTableName);
+                await hashingService.Execute(path.ToString());
+                
+                return "Ok";
+            }
+            catch (Exception exception)
+            {
+                return exception.Message;
+            }
         }
     }
 }

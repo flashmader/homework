@@ -18,13 +18,13 @@ namespace PasswordHashing
 
         public async Task Write(IEnumerable<SourceRecord> values)
         {
-            BatchWriteItemRequest request = new BatchWriteItemRequest();
-            List<WriteRequest> writeRequests = new List<WriteRequest>();
+            var request = new BatchWriteItemRequest();
+            var writeRequests = new List<WriteRequest>();
 
             foreach (var sourceRecord in values)
             {
                 var dynamoItem = MapSourceRecordToDynamoAttributes(sourceRecord);
-                WriteRequest writeRequest = new WriteRequest(new PutRequest(dynamoItem));
+                var writeRequest = new WriteRequest(new PutRequest(dynamoItem));
                 writeRequests.Add(writeRequest);
             }
 

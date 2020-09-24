@@ -9,23 +9,27 @@ namespace PasswordHashing
     {
         private readonly AmazonS3Client _client;
         private readonly string _bucketName;
-        private readonly string _prefix;
+        private readonly string _path;
 
-        public SourceFilesS3Reader(AmazonS3Client client, string bucketName, string prefix)
+        public SourceFilesS3Reader(AmazonS3Client client, string bucketName, string path)
         {
             _client = client;
             _bucketName = bucketName;
-            _prefix = prefix;
+            _path = path;
         }
 
         public async IAsyncEnumerable<SourceFile> GetFiles()
         {
-            var request = new ListObjectsRequest { BucketName = _bucketName, Prefix = _prefix };
+            var request = new ListObjectsRequest { BucketName = _bucketName, Prefix = _path };
             var response = await _client.ListObjectsAsync(request);
 
             var objectKeys = response
                 .S3Objects
-                .Where(s3Obj => !s3Obj.Key.EndsWith("/"))
+                .Where(s3Obj =>
+                {
+                    var fileNameWithoutPath = s3Obj.Key.Substring(_path.Length + 1);
+                    return !fileNameWithoutPath.Contains("/");
+                })
                 .Select(x => x.Key);
 
             foreach (var objectKey in objectKeys)
