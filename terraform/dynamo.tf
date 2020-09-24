@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "homework_dynamodb" {
-  name           = "homework-dynamodb"
+  name           = "${var.dynamo-table-name}"
   read_capacity  = 20
   write_capacity = 20
   hash_key       = "Path"
